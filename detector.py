@@ -1,6 +1,4 @@
 import streamlit as st
-import base64
-from pathlib import Path
 
 st.set_page_config(
     page_title="AI Cover Detection System",
@@ -9,19 +7,17 @@ st.set_page_config(
 )
 
 # -----------------------------
-# 기본 스타일
+# 스타일 / 애니메이션
 # -----------------------------
 def load_css():
     st.markdown("""
     <style>
-    /* 전체 배경 */
     .stApp {
         background: linear-gradient(180deg, #0B0B0D 0%, #111318 100%);
         color: #F3F4F6;
         font-family: 'Inter', sans-serif;
     }
 
-    /* 상단 여백 조정 */
     .block-container {
         padding-top: 2rem;
         padding-bottom: 2rem;
@@ -29,7 +25,34 @@ def load_css():
         padding-right: 3rem;
     }
 
-    /* 헤더 영역 */
+    @keyframes backgroundGlow {
+        0%   { transform: translateX(-10px) translateY(0px); opacity: 0.18; }
+        50%  { transform: translateX(10px) translateY(-6px); opacity: 0.28; }
+        100% { transform: translateX(-10px) translateY(0px); opacity: 0.18; }
+    }
+
+    @keyframes wavePulse {
+        0%   { transform: scaleY(0.55); opacity: 0.55; }
+        50%  { transform: scaleY(1.15); opacity: 1; }
+        100% { transform: scaleY(0.55); opacity: 0.55; }
+    }
+
+    @keyframes fadeSlideUp {
+        0% {
+            opacity: 0;
+            transform: translateY(18px);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes shimmer {
+        0%   { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+    }
+
     .hero-container {
         position: relative;
         overflow: hidden;
@@ -41,6 +64,20 @@ def load_css():
             linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
         box-shadow: 0 10px 30px rgba(0,0,0,0.35);
         margin-bottom: 1.8rem;
+        animation: fadeSlideUp 0.9s ease-out;
+    }
+
+    .hero-container::before {
+        content: "";
+        position: absolute;
+        top: -40%;
+        right: -10%;
+        width: 320px;
+        height: 320px;
+        background: radial-gradient(circle, rgba(143,168,201,0.22), transparent 65%);
+        filter: blur(20px);
+        animation: backgroundGlow 6s ease-in-out infinite;
+        pointer-events: none;
     }
 
     .hero-title {
@@ -59,10 +96,9 @@ def load_css():
         margin-bottom: 1.5rem;
     }
 
-    /* 웨이브 장식 */
     .wave-wrap {
         margin-top: 1rem;
-        opacity: 0.55;
+        opacity: 0.65;
     }
 
     .wave-line {
@@ -76,10 +112,10 @@ def load_css():
         width: 4px;
         border-radius: 999px;
         background: linear-gradient(180deg, #F3F4F6 0%, #8FA8C9 100%);
-        opacity: 0.9;
+        transform-origin: bottom center;
+        animation: wavePulse 1.8s ease-in-out infinite;
     }
 
-    /* 카드 공통 */
     .glass-card {
         background: linear-gradient(180deg, rgba(21,23,28,0.95), rgba(17,19,24,0.95));
         border: 1px solid rgba(192, 196, 204, 0.16);
@@ -87,6 +123,14 @@ def load_css():
         padding: 1.4rem 1.4rem;
         box-shadow: 0 10px 24px rgba(0,0,0,0.28);
         height: 100%;
+        animation: fadeSlideUp 0.8s ease-out;
+        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    }
+
+    .glass-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 30px rgba(0,0,0,0.35);
+        border-color: rgba(143,168,201,0.32);
     }
 
     .card-title {
@@ -111,19 +155,38 @@ def load_css():
         margin-bottom: 0.4rem;
     }
 
-    /* 결과 카드 */
     .result-box {
+        position: relative;
+        overflow: hidden;
         background: linear-gradient(180deg, rgba(16,18,22,1), rgba(20,23,29,1));
         border: 1px solid rgba(192, 196, 204, 0.18);
         border-radius: 24px;
         padding: 1.8rem;
         box-shadow: 0 12px 28px rgba(0,0,0,0.3);
+        animation: fadeSlideUp 0.9s ease-out;
+    }
+
+    .result-box::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            110deg,
+            transparent 20%,
+            rgba(255,255,255,0.06) 45%,
+            transparent 70%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 4s linear infinite;
+        pointer-events: none;
     }
 
     .result-title {
         font-size: 1rem;
         color: #C0C4CC;
         margin-bottom: 0.6rem;
+        position: relative;
+        z-index: 1;
     }
 
     .result-main {
@@ -131,21 +194,31 @@ def load_css():
         font-weight: 800;
         color: #F8F9FA;
         margin-bottom: 0.4rem;
+        position: relative;
+        z-index: 1;
     }
 
     .result-score {
         font-size: 1rem;
         color: #8FA8C9;
         font-weight: 700;
+        position: relative;
+        z-index: 1;
     }
 
-    /* 구간 카드 */
     .segment-card {
         background: rgba(255,255,255,0.02);
         border: 1px solid rgba(192, 196, 204, 0.14);
         border-radius: 16px;
         padding: 0.9rem 1rem;
         margin-bottom: 0.8rem;
+        animation: fadeSlideUp 0.8s ease-out;
+        transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .segment-card:hover {
+        transform: translateX(4px);
+        border-color: rgba(143,168,201,0.28);
     }
 
     .segment-time {
@@ -159,12 +232,12 @@ def load_css():
         font-size: 0.92rem;
     }
 
-    /* 파일 업로드 영역 */
     [data-testid="stFileUploader"] {
         background: rgba(255,255,255,0.02);
         border: 1px solid rgba(192, 196, 204, 0.18);
         border-radius: 18px;
         padding: 1rem;
+        animation: fadeSlideUp 0.9s ease-out;
     }
 
     [data-testid="stFileUploader"] section {
@@ -173,7 +246,6 @@ def load_css():
         background: rgba(255,255,255,0.01);
     }
 
-    /* 버튼 */
     .stButton > button {
         background: linear-gradient(135deg, #C0C4CC 0%, #8FA8C9 100%);
         color: #0B0B0D;
@@ -187,20 +259,19 @@ def load_css():
     }
 
     .stButton > button:hover {
-        transform: translateY(-1px);
-        filter: brightness(1.03);
+        transform: translateY(-2px) scale(1.01);
+        filter: brightness(1.05);
     }
 
-    /* 구분 헤더 */
     .section-title {
         font-size: 1.5rem;
         font-weight: 800;
         color: #F3F4F6;
         margin-top: 0.6rem;
         margin-bottom: 1rem;
+        animation: fadeSlideUp 0.7s ease-out;
     }
 
-    /* 수평선 */
     hr {
         border: none;
         border-top: 1px solid rgba(192, 196, 204, 0.14);
@@ -231,9 +302,16 @@ def fake_predict():
 # -----------------------------
 def render_hero():
     bars = [18, 42, 26, 55, 20, 48, 32, 58, 23, 44, 29, 52, 16, 38, 25, 61, 34, 47, 21, 43, 18, 57, 28, 49]
-    bars_html = "".join(
-        [f"<div class='wave-bar' style='height:{h}px;'></div>" for h in bars]
-    )
+
+    bars_html = ""
+    for i, h in enumerate(bars):
+        delay = round(i * 0.08, 2)
+        duration = 1.6 + (i % 4) * 0.25
+        bars_html += f"""
+        <div class='wave-bar'
+             style='height:{h}px; animation-delay:{delay}s; animation-duration:{duration}s;'>
+        </div>
+        """
 
     st.markdown(f"""
     <div class="hero-container">
@@ -293,7 +371,7 @@ def render_feature_cards():
 
 
 # -----------------------------
-# 메인
+# 메인 렌더링
 # -----------------------------
 load_css()
 render_hero()
@@ -311,14 +389,35 @@ if uploaded_file is not None:
     st.audio(uploaded_file)
 
     col_btn1, col_btn2, _ = st.columns([1, 1, 4])
+
     with col_btn1:
         analyze = st.button("Analyze Audio")
+
     with col_btn2:
-        st.button("Clear")
+        clear = st.button("Clear")
 
     if analyze:
-        with st.spinner("오디오를 분석하는 중입니다..."):
-            result = fake_predict()
+        st.markdown("""
+        <div class="glass-card" style="margin-top: 1rem; margin-bottom: 1rem;">
+            <div class="mini-label">Processing</div>
+            <div class="card-title">Analyzing Audio Track</div>
+            <div class="card-text">
+                보컬 패턴을 분석하고 AI 커버곡 여부를 판별하는 중입니다...
+            </div>
+            <div class="wave-wrap">
+                <div class="wave-line">
+                    <div class="wave-bar" style="height:18px; animation-delay:0s;"></div>
+                    <div class="wave-bar" style="height:35px; animation-delay:0.1s;"></div>
+                    <div class="wave-bar" style="height:22px; animation-delay:0.2s;"></div>
+                    <div class="wave-bar" style="height:48px; animation-delay:0.3s;"></div>
+                    <div class="wave-bar" style="height:28px; animation-delay:0.4s;"></div>
+                    <div class="wave-bar" style="height:42px; animation-delay:0.5s;"></div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        result = fake_predict()
 
         st.markdown("<hr>", unsafe_allow_html=True)
         st.markdown('<div class="section-title">Detection Result</div>', unsafe_allow_html=True)
