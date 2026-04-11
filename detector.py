@@ -332,42 +332,36 @@ def render_hero():
 
 # -----------------------------
 # 기능 카드
+# ✅ 수정: 각 카드를 컬럼 안에서 개별 st.markdown()으로 렌더링하면
+#    Streamlit이 HTML을 컬럼 밖으로 밀어내는 문제가 생길 수 있음.
+#    세 카드를 단일 HTML 블록으로 조립 후 컬럼 없이 flex로 배치하도록 변경.
 # -----------------------------
 def render_feature_cards():
-    c1, c2, c3 = st.columns(3)
-
-    with c1:
-        st.markdown("""
-        <div class="glass-card">
+    st.markdown("""
+    <div style="display: flex; gap: 1.2rem; margin-bottom: 0.4rem;">
+        <div class="glass-card" style="flex: 1;">
             <div class="mini-label">Step 01</div>
             <div class="card-title">Upload Audio</div>
             <div class="card-text">
                 mp3 또는 wav 형식의 노래 파일을 업로드하여 분석을 시작합니다.
             </div>
         </div>
-        """, unsafe_allow_html=True)
-
-    with c2:
-        st.markdown("""
-        <div class="glass-card">
+        <div class="glass-card" style="flex: 1;">
             <div class="mini-label">Step 02</div>
             <div class="card-title">Analyze Voice Pattern</div>
             <div class="card-text">
                 모델이 오디오를 전처리하고 구간별 보컬 패턴을 분석합니다.
             </div>
         </div>
-        """, unsafe_allow_html=True)
-
-    with c3:
-        st.markdown("""
-        <div class="glass-card">
+        <div class="glass-card" style="flex: 1;">
             <div class="mini-label">Step 03</div>
             <div class="card-title">Detect AI Cover</div>
             <div class="card-text">
                 최종 판별 결과와 AI 가능성 점수, 의심 구간 정보를 제공합니다.
             </div>
         </div>
-        """, unsafe_allow_html=True)
+    </div>
+    """, unsafe_allow_html=True)
 
 
 # -----------------------------
@@ -444,21 +438,26 @@ if uploaded_file is not None:
             """, unsafe_allow_html=True)
 
         with right:
-            st.markdown("""
-            <div class="glass-card">
-                <div class="mini-label">Suspicious Segments</div>
-                <div class="card-title">Highlighted Sections</div>
-            """, unsafe_allow_html=True)
-
+            # ✅ 수정: glass-card 열기 → 루프로 segment-card 추가 → glass-card 닫기를
+            #    각각 별도 st.markdown()으로 호출하면 Streamlit이 독립 블록으로 처리해
+            #    열린 태그가 화면에 그대로 노출됨.
+            #    segment HTML을 루프에서 문자열로 조립한 뒤 단일 st.markdown()으로 렌더링.
+            segments_html = ""
             for seg in result["segments"]:
-                st.markdown(f"""
+                segments_html += f"""
                 <div class="segment-card">
                     <div class="segment-time">{seg['time']}</div>
                     <div class="segment-score">AI Score: {seg['score']:.2f}</div>
                 </div>
-                """, unsafe_allow_html=True)
+                """
 
-            st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class="glass-card">
+                <div class="mini-label">Suspicious Segments</div>
+                <div class="card-title">Highlighted Sections</div>
+                {segments_html}
+            </div>
+            """, unsafe_allow_html=True)
 
         st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
         st.markdown("""
