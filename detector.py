@@ -19,7 +19,7 @@ def load_css():
     }
 
     .block-container {
-        padding-top: 2rem;
+        padding-top: 3.5rem;
         padding-bottom: 2rem;
         padding-left: 3rem;
         padding-right: 3rem;
@@ -315,11 +315,11 @@ def render_hero():
 
     st.markdown(f"""
     <div class="hero-container">
-        <div class="mini-label">Silver Wave Dashboard</div>
+        <div class="mini-label">AI의 목소리가 들려</div>
         <div class="hero-title">AI Cover Detection System</div>
         <div class="hero-subtitle">
-            업로드한 음원의 보컬 패턴을 분석하여 AI 커버곡 여부를 식별합니다.
-            오디오 딥페이크 탐지 기반으로 결과를 시각화하고, 의심 구간과 분석 결과를 직관적으로 제공합니다.
+            음성 패턴 분석 기반 AI 커버 탐지 시스템
+            AI 커버 가능성을 한 눈에 확인해보세요
         </div>
         <div class="wave-wrap">
             <div class="wave-line">
@@ -341,21 +341,21 @@ def render_feature_cards():
     <div style="display: flex; gap: 1.2rem; margin-bottom: 0.4rem;">
         <div class="glass-card" style="flex: 1;">
             <div class="mini-label">Step 01</div>
-            <div class="card-title">Upload Audio</div>
+            <div class="card-title">분석할 음원 업로드</div>
             <div class="card-text">
-                mp3 또는 wav 형식의 노래 파일을 업로드하여 분석을 시작합니다.
+                mp3 또는 wav 형식의 노래 파일을 업로드하여 분석을 시작하세요.
             </div>
         </div>
         <div class="glass-card" style="flex: 1;">
             <div class="mini-label">Step 02</div>
-            <div class="card-title">Analyze Voice Pattern</div>
+            <div class="card-title">음성 패턴 분석</div>
             <div class="card-text">
-                모델이 오디오를 전처리하고 구간별 보컬 패턴을 분석합니다.
+                보컬 패턴을 분석해 AI 커버곡 여부를 탐지합니다.
             </div>
         </div>
         <div class="glass-card" style="flex: 1;">
             <div class="mini-label">Step 03</div>
-            <div class="card-title">Detect AI Cover</div>
+            <div class="card-title">결과 확인</div>
             <div class="card-text">
                 최종 판별 결과와 AI 가능성 점수, 의심 구간 정보를 제공합니다.
             </div>
