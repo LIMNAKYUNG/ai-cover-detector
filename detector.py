@@ -307,11 +307,11 @@ def render_hero():
     for i, h in enumerate(bars):
         delay = round(i * 0.08, 2)
         duration = 1.6 + (i % 4) * 0.25
-        bars_html += f"""
-        <div class='wave-bar'
-             style='height:{h}px; animation-delay:{delay}s; animation-duration:{duration}s;'>
-        </div>
-        """
+        bars_html += (
+            f'<div class="wave-bar" '
+            f'style="height:{h}px; animation-delay:{delay}s; animation-duration:{duration}s;">'
+            f'</div>'
+        )
 
     st.markdown(f"""
     <div class="hero-container">
