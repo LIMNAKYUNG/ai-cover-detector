@@ -14,7 +14,7 @@ class SSLModel(nn.Module):
         self.out_dim = 2048
 
     def extract_feat(self, input_data, input_data2):
-        input_tmp  = input_data[:, :, 0]  if input_data.ndim  == 3 else input_data
+        input_tmp  = input_data[:, :, 0] if input_data.ndim == 3 else input_data
         input_tmp2 = input_data2[:, :, 0] if input_data2.ndim == 3 else input_data2
 
         if next(self.model.parameters()).device != input_tmp.device:
@@ -50,12 +50,13 @@ class GraphAttentionLayer(nn.Module):
         x = self.input_drop(x)
         att_map = self._derive_att_map(x)
         x = self.proj_with_att(torch.matmul(att_map.squeeze(-1), x)) + self.proj_without_att(x)
-        org = x.size(); x = self.bn(x.view(-1, org[-1])).view(org)
+        org = x.size()
+        x = self.bn(x.view(-1, org[-1])).view(org)
         return self.act(x)
 
     def _pairwise_mul_nodes(self, x):
         nb_nodes = x.size(1)
-        x_exp = x.unsqueeze(2).expand(-1, -1, nb_nodes, -1)
+        x_exp    = x.unsqueeze(2).expand(-1, -1, nb_nodes, -1)
         x_mirror = x_exp.transpose(1, 2)
         return x_exp * x_mirror
 
@@ -64,7 +65,9 @@ class GraphAttentionLayer(nn.Module):
         return F.softmax(torch.matmul(a, self.att_weight) / self.temp, dim=-2)
 
     def _init_new_params(self, *size):
-        p = nn.Parameter(torch.FloatTensor(*size)); nn.init.xavier_normal_(p); return p
+        p = nn.Parameter(torch.FloatTensor(*size))
+        nn.init.xavier_normal_(p)
+        return p
 
 
 class HtrgGraphAttentionLayer(nn.Module):
@@ -78,8 +81,8 @@ class HtrgGraphAttentionLayer(nn.Module):
         self.att_weight22 = self._init_new_params(out_dim, 1)
         self.att_weight12 = self._init_new_params(out_dim, 1)
         self.att_weightM  = self._init_new_params(out_dim, 1)
-        self.proj_with_att    = nn.Linear(in_dim, out_dim)
-        self.proj_without_att = nn.Linear(in_dim, out_dim)
+        self.proj_with_att     = nn.Linear(in_dim, out_dim)
+        self.proj_without_att  = nn.Linear(in_dim, out_dim)
         self.proj_with_attM    = nn.Linear(in_dim, out_dim)
         self.proj_without_attM = nn.Linear(in_dim, out_dim)
         self.bn         = nn.BatchNorm1d(out_dim)
@@ -96,7 +99,8 @@ class HtrgGraphAttentionLayer(nn.Module):
         att    = self._derive_att_map(x, n1, x2.size(1))
         master = self._update_master(x, master)
         x      = self.proj_with_att(torch.matmul(att.squeeze(-1), x)) + self.proj_without_att(x)
-        org    = x.size(); x = self.bn(x.view(-1, org[-1])).view(org)
+        org    = x.size()
+        x      = self.bn(x.view(-1, org[-1])).view(org)
         x      = self.act(x)
         return x.narrow(1, 0, n1), x.narrow(1, n1, x2.size(1)), master
 
@@ -106,18 +110,22 @@ class HtrgGraphAttentionLayer(nn.Module):
         return self.proj_with_attM(torch.matmul(a.squeeze(-1).unsqueeze(1), x)) + self.proj_without_attM(master)
 
     def _derive_att_map(self, x, n1, n2):
-        nb  = x.size(1)
-        pm  = x.unsqueeze(2).expand(-1,-1,nb,-1) * x.transpose(1,2).unsqueeze(1).expand(-1,nb,-1,-1)
-        att = torch.tanh(self.att_proj(pm))
-        b   = torch.zeros_like(att[:,:,:,0]).unsqueeze(-1)
-        b[:, :n1,  :n1,  :] = torch.matmul(att[:, :n1,  :n1,  :], self.att_weight11)
-        b[:, n1:,  n1:,  :] = torch.matmul(att[:, n1:,  n1:,  :], self.att_weight22)
-        b[:, :n1,  n1:,  :] = torch.matmul(att[:, :n1,  n1:,  :], self.att_weight12)
-        b[:, n1:,  :n1,  :] = torch.matmul(att[:, n1:,  :n1,  :], self.att_weight12)
+        nb    = x.size(1)
+        x_exp    = x.unsqueeze(2).expand(-1, -1, nb, -1)
+        x_mirror = x_exp.transpose(1, 2)
+        pm    = x_exp * x_mirror
+        att   = torch.tanh(self.att_proj(pm))
+        b     = torch.zeros_like(att[:, :, :, 0]).unsqueeze(-1)
+        b[:, :n1, :n1, :] = torch.matmul(att[:, :n1, :n1, :], self.att_weight11)
+        b[:, n1:, n1:, :] = torch.matmul(att[:, n1:, n1:, :], self.att_weight22)
+        b[:, :n1, n1:, :] = torch.matmul(att[:, :n1, n1:, :], self.att_weight12)
+        b[:, n1:, :n1, :] = torch.matmul(att[:, n1:, :n1, :], self.att_weight12)
         return F.softmax(b / self.temp, dim=-2)
 
     def _init_new_params(self, *size):
-        p = nn.Parameter(torch.FloatTensor(*size)); nn.init.xavier_normal_(p); return p
+        p = nn.Parameter(torch.FloatTensor(*size))
+        nn.init.xavier_normal_(p)
+        return p
 
 
 class GraphPool(nn.Module):
@@ -141,13 +149,13 @@ class Residual_block(nn.Module):
         self.first = first
         if not first:
             self.bn1 = nn.BatchNorm2d(nb_filts[0])
-        self.conv1 = nn.Conv2d(nb_filts[0], nb_filts[1], (2,3), padding=(1,1))
+        self.conv1 = nn.Conv2d(nb_filts[0], nb_filts[1], (2, 3), padding=(1, 1))
         self.selu  = nn.SELU(inplace=True)
         self.bn2   = nn.BatchNorm2d(nb_filts[1])
-        self.conv2 = nn.Conv2d(nb_filts[1], nb_filts[1], (2,3), padding=(0,1))
+        self.conv2 = nn.Conv2d(nb_filts[1], nb_filts[1], (2, 3), padding=(0, 1))
         self.downsample = nb_filts[0] != nb_filts[1]
         if self.downsample:
-            self.conv_downsample = nn.Conv2d(nb_filts[0], nb_filts[1], (1,3), padding=(0,1))
+            self.conv_downsample = nn.Conv2d(nb_filts[0], nb_filts[1], (1, 3), padding=(0, 1))
 
     def forward(self, x):
         identity = x
@@ -164,7 +172,7 @@ class Wav2Vec2Model(nn.Module):
         super().__init__()
         self.device = device
 
-        filts        = [128, [1,32], [32,32], [32,64], [64,64]]
+        filts        = [128, [1, 32], [32, 32], [32, 64], [64, 64]]
         gat_dims     = [64, 32]
         pool_ratios  = [0.5, 0.5, 0.5, 0.5]
         temperatures = [2.0, 2.0, 100.0, 100.0]
@@ -177,7 +185,6 @@ class Wav2Vec2Model(nn.Module):
         self.drop_way  = nn.Dropout(0.2, inplace=True)
         self.selu      = nn.SELU(inplace=True)
 
-        
         self.encoder = nn.Sequential(
             nn.Sequential(Residual_block(nb_filts=filts[1], first=True)),
             nn.Sequential(Residual_block(nb_filts=filts[2])),
@@ -187,8 +194,8 @@ class Wav2Vec2Model(nn.Module):
             nn.Sequential(Residual_block(nb_filts=filts[4])),
         )
         self.attention = nn.Sequential(
-            nn.Conv2d(64,128,(1,1)), nn.SELU(inplace=True),
-            nn.BatchNorm2d(128),    nn.Conv2d(128,64,(1,1)),
+            nn.Conv2d(64, 128, (1, 1)), nn.SELU(inplace=True),
+            nn.BatchNorm2d(128),        nn.Conv2d(128, 64, (1, 1)),
         )
 
         self.pos_S   = nn.Parameter(torch.randn(1, 42, filts[-1][-1]))
@@ -214,49 +221,55 @@ class Wav2Vec2Model(nn.Module):
 
     def forward(self, x, x2):
         x = self.LL(self.ssl_model.extract_feat(x.squeeze(-1), x2.squeeze(-1)))
-        x = self.selu(self.first_bn(F.max_pool2d(x.transpose(1,2).unsqueeze(1), (3,3))))
+        x = self.selu(self.first_bn(F.max_pool2d(x.transpose(1, 2).unsqueeze(1), (3, 3))))
         x = self.selu(self.first_bn1(self.encoder(x)))
         w = self.attention(x)
 
         # spectral branch
-        e_S_raw = torch.sum(x * F.softmax(w, dim=-1), dim=-1).transpose(1,2)
-        pos_S = self.pos_S
-        if e_S_raw.size(1) != pos_S.size(1):
+        e_S_raw = torch.sum(x * F.softmax(w, dim=-1), dim=-1).transpose(1, 2)
+        if e_S_raw.size(1) != self.pos_S.size(1):
             pos_S = F.interpolate(
-                pos_S.transpose(1,2), size=e_S_raw.size(1), mode='linear', align_corners=False
-            ).transpose(1,2)
+                self.pos_S.transpose(1, 2),
+                size=e_S_raw.size(1),
+                mode='linear',
+                align_corners=False
+            ).transpose(1, 2)
+        else:
+            pos_S = self.pos_S
         e_S = e_S_raw + pos_S
 
         out_S = self.pool_S(self.GAT_layer_S(e_S))
 
         # temporal branch
-        e_T   = torch.sum(x * F.softmax(w, dim=-2), dim=-2).transpose(1,2)
+        e_T   = torch.sum(x * F.softmax(w, dim=-2), dim=-2).transpose(1, 2)
         out_T = self.pool_T(self.GAT_layer_T(e_T))
 
         # inference 1
         out_T1, out_S1, m1 = self.HtrgGAT_layer_ST11(out_T, out_S, master=self.master1)
-        out_S1 = self.pool_hS1(out_S1); out_T1 = self.pool_hT1(out_T1)
+        out_S1 = self.pool_hS1(out_S1)
+        out_T1 = self.pool_hT1(out_T1)
         dT, dS, dm = self.HtrgGAT_layer_ST12(out_T1, out_S1, master=m1)
         out_T1 += dT; out_S1 += dS; m1 += dm
 
         # inference 2
         out_T2, out_S2, m2 = self.HtrgGAT_layer_ST21(out_T, out_S, master=self.master2)
-        out_S2 = self.pool_hS2(out_S2); out_T2 = self.pool_hT2(out_T2)
+        out_S2 = self.pool_hS2(out_S2)
+        out_T2 = self.pool_hT2(out_T2)
         dT, dS, dm = self.HtrgGAT_layer_ST22(out_T2, out_S2, master=m2)
         out_T2 += dT; out_S2 += dS; m2 += dm
 
-        out_T1,out_T2 = self.drop_way(out_T1), self.drop_way(out_T2)
-        out_S1,out_S2 = self.drop_way(out_S1), self.drop_way(out_S2)
-        m1, m2        = self.drop_way(m1),     self.drop_way(m2)
+        out_T1, out_T2 = self.drop_way(out_T1), self.drop_way(out_T2)
+        out_S1, out_S2 = self.drop_way(out_S1), self.drop_way(out_S2)
+        m1, m2         = self.drop_way(m1),     self.drop_way(m2)
 
         out_T  = torch.max(out_T1, out_T2)
         out_S  = torch.max(out_S1, out_S2)
         master = torch.max(m1, m2)
 
-        T_max,_ = torch.max(torch.abs(out_T), dim=1)
-        T_avg   = out_T.mean(dim=1)
-        S_max,_ = torch.max(torch.abs(out_S), dim=1)
-        S_avg   = out_S.mean(dim=1)
+        T_max, _ = torch.max(torch.abs(out_T), dim=1)
+        T_avg    = out_T.mean(dim=1)
+        S_max, _ = torch.max(torch.abs(out_S), dim=1)
+        S_avg    = out_S.mean(dim=1)
 
         h = self.drop(torch.cat([T_max, T_avg, S_max, S_avg, master.squeeze(1)], dim=1))
         return self.out_layer(h)
