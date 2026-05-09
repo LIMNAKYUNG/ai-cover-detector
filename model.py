@@ -175,10 +175,14 @@ class Wav2Vec2Model(nn.Module):
         self.drop_way  = nn.Dropout(0.2, inplace=True)
         self.selu      = nn.SELU(inplace=True)
 
+        
         self.encoder = nn.Sequential(
-            Residual_block(filts[1], first=True),
-            Residual_block(filts[2]), Residual_block(filts[3]),
-            Residual_block(filts[4]), Residual_block(filts[4]), Residual_block(filts[4]),
+            nn.Sequential(Residual_block(nb_filts=filts[1], first=True)),
+            nn.Sequential(Residual_block(nb_filts=filts[2])),
+            nn.Sequential(Residual_block(nb_filts=filts[3])),
+            nn.Sequential(Residual_block(nb_filts=filts[4])),
+            nn.Sequential(Residual_block(nb_filts=filts[4])),
+            nn.Sequential(Residual_block(nb_filts=filts[4])),
         )
         self.attention = nn.Sequential(
             nn.Conv2d(64,128,(1,1)), nn.SELU(inplace=True),
